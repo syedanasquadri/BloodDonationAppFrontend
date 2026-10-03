@@ -1,44 +1,25 @@
-import {
-  Pressable,
-  Text,
-  StyleSheet,
-} from "react-native";
-
-import { colors } from "../styles/colors";
+import { Pressable, Text } from "react-native";
 
 type ButtonProps = {
   title: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
 export default function Button({
   title,
   onPress,
+  disabled = false
 }: ButtonProps) {
   return (
     <Pressable
-      style={styles.button}
+      className={`h-[52px] items-center justify-center rounded-xl bg-primary ${disabled ? "bg-muted" : "bg-primary"}`}
       onPress={onPress}
+      disabled={disabled}
     >
-      <Text style={styles.text}>
+      <Text className="text-base font-bold text-white">
         {title}
       </Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  text: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-});

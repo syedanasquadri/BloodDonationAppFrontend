@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-} from "react-native";
-
+import { View, Text } from "react-native";
 import Button from "./Button";
-import { colors } from "../styles/colors";
 
 type Props = {
   name: string;
@@ -21,12 +15,12 @@ export default function DonorCard({
   onRequest,
 }: Props) {
   return (
-    <View style={styles.card}>
-      <Text style={styles.name}>
+    <View className="mb-[14px] rounded-2xl border border-border p-[18px]">
+      <Text className="text-[19px] font-bold text-text">
         {name}
       </Text>
 
-      <Text style={styles.info}>
+      <Text className="mb-4 mt-1.5 text-sm text-muted">
         {bloodGroup} • {distance} away • Available
       </Text>
 
@@ -37,25 +31,3 @@ export default function DonorCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-  },
-
-  name: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  info: {
-    color: colors.muted,
-    marginTop: 6,
-    marginBottom: 16,
-  },
-});

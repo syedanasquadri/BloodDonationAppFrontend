@@ -1,50 +1,40 @@
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 
-import Button from "../components/Button";
-import { colors } from "../styles/colors";
-import { spacing } from "../styles/spacing";
-import { typography } from "../styles/typography";
-
-export default function Home() {
+export default function HomeScreen() {
   return (
-    <View
-      style={{
-        flex: 1,
-        padding: spacing.lg,
-        justifyContent: "center",
-        backgroundColor: colors.background,
-      }}
-    >
-      <Text style={typography.heading}>
-        🩸 BloodConnect
-      </Text>
+    <View className="flex-1 bg-background px-5 pt-16">
+      <Text className="text-3xl font-bold text-text">Good morning 👋</Text>
 
-      <Text
-        style={[
-          typography.title,
-          { marginTop: spacing.xl },
-        ]}
-      >
-        Every drop connects a life.
+      <Text className="mt-2 text-base text-muted">
+        Find blood when you need it.
       </Text>
-
-      <Text
-        style={[
-          typography.body,
-          {
-            marginTop: spacing.md,
-            marginBottom: spacing.xl,
-          },
-        ]}
-      >
-        Find blood donors near you quickly and safely.
+      <Text className="mb-3 mt-8 text-lg font-bold text-text">
+        What would you like to do?
       </Text>
+      <View className="gap-4">
+        <Pressable
+          className="rounded-2xl bg-primary p-5"
+          onPress={() => router.push("/find-blood")}
+        >
+          <Text className="text-xl font-bold text-white">Find Blood</Text>
 
-      <Button
-        title="Get Started"
-        onPress={() => router.push("/find-blood")}
-      />
+          <Text className="mt-1 text-white/80">
+            Find nearby donors who can help.
+          </Text>
+        </Pressable>
+
+        <Pressable
+          className="rounded-2xl border border-border bg-white p-5"
+          onPress={() => router.push("/register-donor")}
+        >
+          <Text className="text-xl font-bold text-primary">Donate Blood</Text>
+
+          <Text className="mt-1 text-muted">
+            Register as a donor and help save lives.
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

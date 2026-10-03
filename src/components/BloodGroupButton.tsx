@@ -1,10 +1,4 @@
-import {
-  Pressable,
-  Text,
-  StyleSheet,
-} from "react-native";
-
-import { colors } from "../styles/colors";
+import { Pressable, Text } from "react-native";
 
 type Props = {
   group: string;
@@ -19,46 +13,20 @@ export default function BloodGroupButton({
 }: Props) {
   return (
     <Pressable
-      style={[
-        styles.button,
-        selected && styles.selected,
-      ]}
+      className={`w-[47%] items-center rounded-[14px] border p-[22px] ${
+        selected
+          ? "border-primary bg-primary"
+          : "border-border bg-white"
+      }`}
       onPress={onPress}
     >
       <Text
-        style={[
-          styles.text,
-          selected && styles.selectedText,
-        ]}
+        className={`text-xl font-bold ${
+          selected ? "text-white" : "text-primary"
+        }`}
       >
         {group}
       </Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    width: "47%",
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    alignItems: "center",
-  },
-
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-
-  text: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-
-  selectedText: {
-    color: colors.white,
-  },
-});

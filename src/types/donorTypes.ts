@@ -4,5 +4,4 @@ export type Donor = {
   bloodGroup: string;
   phone: string;
   location: string;
-  isAvailable: boolean;
 };
