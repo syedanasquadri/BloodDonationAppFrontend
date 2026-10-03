@@ -1,23 +1,9 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
-
 import BloodGroupButton from "../components/BloodGroupButton";
 import Button from "../components/Button";
-import { colors } from "../styles/colors";
-import { spacing } from "../styles/spacing";
-import { typography } from "../styles/typography";
-
-const bloodGroups = [
-  "A+",
-  "A-",
-  "B+",
-  "B-",
-  "O+",
-  "O-",
-  "AB+",
-  "AB-",
-];
+const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 
 export default function FindBlood() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -34,16 +20,14 @@ export default function FindBlood() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={typography.heading}>
-        Find Blood
-      </Text>
+    <View className="flex-1 bg-background px-5 pt-16">
+      <Text className="text-3xl font-bold text-text">Find Blood</Text>
 
-      <Text style={styles.subtitle}>
+      <Text className="mb-6 mt-2 text-base text-muted">
         Select the blood group you need
       </Text>
 
-      <View style={styles.grid}>
+      <View className="mb-6 flex-row flex-wrap justify-between gap-4">
         {bloodGroups.map((group) => (
           <BloodGroupButton
             key={group}
@@ -54,34 +38,7 @@ export default function FindBlood() {
         ))}
       </View>
 
-      <Button
-        title="Find Donors"
-        onPress={handleFindDonors}
-      />
+      <Button title="Find Donors" onPress={handleFindDonors} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: spacing.lg,
-    paddingTop: spacing.xxl,
-    backgroundColor: colors.background,
-  },
-
-  subtitle: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
-    color: colors.muted,
-    fontSize: 16,
-  },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-});
