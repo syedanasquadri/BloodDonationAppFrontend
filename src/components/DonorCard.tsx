@@ -4,14 +4,16 @@ import Button from "./Button";
 type Props = {
   name: string;
   bloodGroup: string;
-  distance: string;
+  city: string | null;
+  state: string | null;
   onRequest: () => void;
 };
 
 export default function DonorCard({
   name,
   bloodGroup,
-  distance,
+  city,
+  state,
   onRequest,
 }: Props) {
   return (
@@ -21,7 +23,7 @@ export default function DonorCard({
       </Text>
 
       <Text className="mb-4 mt-1.5 text-sm text-muted">
-        {bloodGroup} • {distance} away • Available
+        {bloodGroup} • {city}, {state}
       </Text>
 
       <Button
