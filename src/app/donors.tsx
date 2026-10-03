@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-
 import { getDonors } from "@/api/donors";
 import DonorCard from "@/components/DonorCard";
+import { Donor } from "@/types/donorTypes";
 
-type Donor = {
-  id: number;
-  name: string;
-  bloodGroup: string;
-  phone: string;
-  location: string;
-};
 
 export default function Donors() {
   const { bloodGroup } = useLocalSearchParams<{
@@ -22,13 +15,9 @@ export default function Donors() {
 
   useEffect(() => {
     const fetchDonors = async () => {
-      const data = await getDonors();
+      const data = await getDonors({bloodGroup});
 
-      const filteredDonors = data.filter(
-        (donor: Donor) => donor.bloodGroup === bloodGroup
-      );
-
-      setDonors(filteredDonors);
+     setDonors(data);
     };
 
     fetchDonors();
@@ -49,7 +38,8 @@ export default function Donors() {
           key={donor.id}
           name={donor.name}
           bloodGroup={donor.bloodGroup}
-          distance={donor.location}
+          city={donor.city}
+          state={donor.state}
           onRequest={() => {}}
         />
       ))}

@@ -7,8 +7,12 @@ export default function RegisterDonor() {
   const [name, setName] = useState("");
   const [bloodGroup, setBloodGroup] = useState("");
   const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
-  const[loading, setLoading] = useState(false);
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     try {
@@ -17,21 +21,24 @@ export default function RegisterDonor() {
         name,
         bloodGroup,
         phone,
-        location,
-    });
-    alert("Donor registered successfully!");
-  } catch(e) {
-    alert("Failed to register donor. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+        address,
+        city,
+        state,
+        latitude: null,
+        longitude: null,
+        isAvailable: true,
+      });
+      alert("Donor registered successfully!");
+    } catch (e) {
+      alert("Failed to register donor. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-background px-5 pt-16">
-      <Text className="text-3xl font-bold text-text">
-        Register as a Donor
-      </Text>
+      <Text className="text-3xl font-bold text-text">Register as a Donor</Text>
 
       <Text className="mb-6 mt-2 text-base text-muted">
         Register your details and help save lives.
@@ -63,10 +70,26 @@ export default function RegisterDonor() {
 
       <TextInput
         className="mb-4 rounded-xl border border-border bg-white px-4 py-4 text-text"
-        placeholder="Location"
+        placeholder="Address"
         placeholderTextColor="#737373"
-        value={location}
-        onChangeText={setLocation}
+        value={address}
+        onChangeText={setAddress}
+      />
+
+      <TextInput
+        className="mb-4 rounded-xl border border-border bg-white px-4 py-4 text-text"
+        placeholder="City"
+        placeholderTextColor="#737373"
+        value={city}
+        onChangeText={setCity}
+      />
+
+      <TextInput
+        className="mb-4 rounded-xl border border-border bg-white px-4 py-4 text-text"
+        placeholder="State"
+        placeholderTextColor="#737373"
+        value={state}
+        onChangeText={setState}
       />
 
       <Button
