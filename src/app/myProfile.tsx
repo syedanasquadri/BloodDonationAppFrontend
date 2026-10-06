@@ -1,4 +1,3 @@
-
 import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 
@@ -35,6 +34,20 @@ export default function MyProfileScreen() {
         <Text className="mt-1 text-base text-muted">
           {profile.phone}
         </Text>
+
+        <View className="mt-4 flex-row gap-3">
+          <Pressable className="rounded-full bg-success px-5 py-2">
+            <Text className="text-sm font-bold text-white">
+              Edit Profile
+            </Text>
+          </Pressable>
+
+          <Pressable className="rounded-full bg-success px-5 py-2">
+            <Text className="text-sm font-bold text-white">
+              My Requests
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <View className="mt-8 rounded-2xl border border-border bg-white p-5">
@@ -81,21 +94,9 @@ export default function MyProfileScreen() {
         </View>
       </View>
 
-      <View className="mt-6 gap-3">
+      <View className="mt-6">
         <Pressable className="rounded-2xl bg-primary p-4">
           <Text className="text-center text-base font-bold text-white">
-            Edit Profile
-          </Text>
-        </Pressable>
-
-        <Pressable className="rounded-2xl border border-border bg-white p-4">
-          <Text className="text-center text-base font-bold text-primary">
-            My Requests
-          </Text>
-        </Pressable>
-
-        <Pressable className="rounded-2xl border border-border bg-white p-4">
-          <Text className="text-center text-base font-bold text-text">
             Logout
           </Text>
         </Pressable>
@@ -103,4 +104,3 @@ export default function MyProfileScreen() {
     </View>
   );
 }
-
