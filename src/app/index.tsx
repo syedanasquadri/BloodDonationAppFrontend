@@ -9,6 +9,12 @@ export default function HomeScreen() {
       <Text className="mt-2 text-base text-muted">
         Find blood when you need it.
       </Text>
+      <Pressable
+        className="absolute right-5 top-14 rounded-full bg-primary px-4 py-2"
+        onPress={() => router.push("/myProfile")}
+      >
+        <Text className="text-sm font-bold text-white">Profile</Text>
+      </Pressable>
       <Text className="mb-3 mt-8 text-lg font-bold text-text">
         What would you like to do?
       </Text>
