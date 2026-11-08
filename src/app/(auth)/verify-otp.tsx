@@ -40,7 +40,7 @@ export default function VerifyOtpScreen() {
 
       if (result.accountExists) {
         await saveAuthTokens(result.accessToken, result.refreshToken);
-        login();
+        await login();
         router.replace("/home");
       } else {
         await saveSignupToken(result.signupToken);

@@ -92,3 +92,7 @@ export const completeSignup = async (
 
   return response.data;
 };
+
+export const logoutSession = async (refreshToken: string): Promise<void> => {
+  await apiClient.post("/api/auth/logout", { refreshToken });
+};

@@ -12,7 +12,7 @@ import { completeSignup } from "@/api/auth";
 import {
   getSignupToken,
   saveAuthTokens,
-  clearTokens,
+  clearSignupToken,
 } from "@/lib/token-storage";
 import { useAuth } from "@/context/AuthContext";
 
@@ -70,8 +70,8 @@ export default function CompleteProfileScreen() {
       });
 
       await saveAuthTokens(result.accessToken, result.refreshToken);
-      await clearTokens();
-      login();
+      await clearSignupToken();
+      await login();
       router.replace("/home");
     } catch (err: any) {
       setError(

@@ -5,12 +5,19 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { getAccessToken, clearTokens } from "@/lib/token-storage";
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "@/lib/token-storage";
+import { logoutSession } from "@/api/auth";
+import { subscribeToAuthInvalidation } from "./auth-events";
+import { sessionCoordinator } from "./session-coordinator";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => void;
+  login: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -21,10 +28,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const unsubscribe = subscribeToAuthInvalidation(() => {
+      setIsAuthenticated(false);
+    });
+
     const restoreSession = async () => {
       try {
-        const token = await getAccessToken();
-        setIsAuthenticated(!!token);
+        const [accessToken, refreshToken] = await Promise.all([
+          getAccessToken(),
+          getRefreshToken(),
+        ]);
+        const hasSession = Boolean(accessToken && refreshToken);
+
+        if (!hasSession && (accessToken || refreshToken)) {
+          await clearTokens();
+        }
+
+        setIsAuthenticated(hasSession);
       } catch (error) {
         console.error("Session restoration failed:", error);
         setIsAuthenticated(false);
@@ -34,14 +54,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     restoreSession();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const logout = async () => {
-    await clearTokens();
+    const refreshSettled = sessionCoordinator.beginLogout();
     setIsAuthenticated(false);
+
+    try {
+      await refreshSettled;
+      const refreshToken =
+        sessionCoordinator.latestRefreshToken ?? (await getRefreshToken());
+      if (refreshToken) {
+        await logoutSession(refreshToken);
+      }
+    } catch (error) {
+      console.warn("Server logout failed; clearing the local session.");
+    } finally {
+      try {
+        await clearTokens();
+      } finally {
+        sessionCoordinator.clearRefreshTokenForLogout();
+        setIsAuthenticated(false);
+      }
+    }
   };
 
-  const login = () => {
+  const login = async () => {
+    const [accessToken, refreshToken] = await Promise.all([
+      getAccessToken(),
+      getRefreshToken(),
+    ]);
+
+    if (!accessToken || !refreshToken) {
+      setIsAuthenticated(false);
+      throw new Error("Authentication tokens were not persisted.");
+    }
+
+    sessionCoordinator.activateSession();
     setIsAuthenticated(true);
   };
 
