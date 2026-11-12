@@ -36,7 +36,12 @@ export default function HomeScreen() {
       <Text className="text-3xl font-bold text-[#B42335]">
         DUA Home
       </Text>
-
+      <TouchableOpacity
+        onPress={() => router.push("/find-blood")}
+        className="mt-8 w-4/5 rounded-xl bg-[#B42335] px-8 py-4"
+      >
+        <Text className="text-center font-bold text-white">Find Blood</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         onPress={handleLogout}
         className="mt-8 rounded-xl bg-[#B42335] px-8 py-4"
