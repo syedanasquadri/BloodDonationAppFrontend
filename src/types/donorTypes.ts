@@ -1,29 +1,13 @@
-export type Donor = {
+import type { BloodGroup } from "@/constants/bloodGroups";
+
+export type DonorSearchResult = {
   id: number;
   name: string;
-  bloodGroup: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  latitude: number | null;
-  longitude: number | null;
-  isAvailable: boolean;
-};
-
-export type CreateDonorInput = {
-  name: string;
-  bloodGroup: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  latitude: number | null;
-  longitude: number | null;
+  bloodGroup: BloodGroup;
+  city: string | null;
+  state: string | null;
 };
 
 export type DonorFilters = {
-  bloodGroup?: string;
-  city?: string;
-  state?: string;
+  bloodGroup?: BloodGroup;
 };

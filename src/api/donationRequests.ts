@@ -1,20 +1,16 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:3000";
+import { apiClient } from "@/api/client";
 
 export type CreateDonationRequestInput = {
   donorId: number;
-  requesterName: string;
-  requesterPhone: string;
   bloodGroup: string;
 };
 
 export const createDonationRequest = async (
-  request: CreateDonationRequestInput,
+  request: CreateDonationRequestInput
 ) => {
-  const response = await axios.post(
-    `${API_URL}/api/donation-requests`,
-    request,
+  const response = await apiClient.post(
+    "/api/donation-requests",
+    request
   );
 
   return response.data;

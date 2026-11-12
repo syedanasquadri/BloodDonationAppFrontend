@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import BloodGroupButton from "../components/BloodGroupButton";
 import Button from "../components/Button";
-const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+import { BLOOD_GROUPS } from "@/constants/bloodGroups";
 
 export default function FindBlood() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -28,12 +28,12 @@ export default function FindBlood() {
       </Text>
 
       <View className="mb-6 flex-row flex-wrap justify-between gap-4">
-        {bloodGroups.map((group) => (
+        {BLOOD_GROUPS.map((group) => (
           <BloodGroupButton
-            key={group}
-            group={group}
-            selected={selectedGroup === group}
-            onPress={() => setSelectedGroup(group)}
+            key={group.value}
+            group={group.label}
+            selected={selectedGroup === group.value}
+            onPress={() => setSelectedGroup(group.value)}
           />
         ))}
       </View>

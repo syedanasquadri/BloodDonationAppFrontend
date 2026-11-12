@@ -1,16 +1,14 @@
-import { CreateDonorInput, DonorFilters, Donor } from "@/types/donorTypes";
-import axios from "axios";
+import { DonorSearchResult, DonorFilters } from "@/types/donorTypes";
+import { apiClient } from "@/api/client";
 
-const API_URL = "http://localhost:3000";
-
-export const getDonors = async (filters: DonorFilters) => {
-  const response = await axios.get(`${API_URL}/api/donors`, {
+export const getDonors = async (
+  filters: DonorFilters,
+  signal?: AbortSignal,
+): Promise<DonorSearchResult[]> => {
+  const response = await apiClient.get("/api/users", {
     params: filters,
+    signal,
   });
-  return response.data as Donor[];
-};
 
-export const createDonor = async (donor: CreateDonorInput) => {
-  const response = await axios.post(`${API_URL}/api/donors`, donor);
   return response.data;
 };
