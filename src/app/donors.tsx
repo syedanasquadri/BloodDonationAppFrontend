@@ -1,9 +1,11 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getDonors } from "@/api/donors";
 import DonorCard from "@/components/DonorCard";
+import DonationRequestSheet from "@/components/DonationRequestSheet";
+import Toast from "@/components/Toast";
 import type { DonorSearchResult } from "@/types/donorTypes";
 import { createDonationRequest } from "@/api/donationRequests";
 import { BLOOD_GROUPS, getBloodGroupLabel } from "@/constants/bloodGroups";
@@ -20,6 +22,16 @@ const getErrorMessage = (error: unknown): string => {
   }
 
   return "Unable to load donors. Please try again.";
+};
+
+const getRequestErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    const responseMessage = error.response?.data?.message;
+    if (typeof responseMessage === "string") return responseMessage;
+    if (!error.response) return "Check your connection and try again.";
+  }
+
+  return "We couldn't send the request. Please try again.";
 };
 
 export default function Donors() {
@@ -42,6 +54,23 @@ export default function Donors() {
     message: string;
   } | null>(null);
   const [retry, setRetry] = useState(0);
+  const [requestStatus, setRequestStatus] = useState<
+    "idle" | "sending" | "error"
+  >("idle");
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestedDonorIds, setRequestedDonorIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,6 +81,8 @@ export default function Donors() {
       setResultsBloodGroup(undefined);
       setSelectedDonor(null);
       setError(null);
+      setRequestStatus("idle");
+      setRequestError(null);
 
       if (!validBloodGroup) {
         setLoading(false);
@@ -104,18 +135,33 @@ export default function Donors() {
     selectedDonor?.bloodGroup === validBloodGroup ? selectedDonor : null;
 
   const handleSendRequest = async () => {
-    if (!visibleSelectedDonor || !validBloodGroup) return;
+    if (!visibleSelectedDonor || !validBloodGroup || requestInFlight.current)
+      return;
+    if (requestedDonorIds.has(visibleSelectedDonor.id)) return;
 
+    requestInFlight.current = true;
+    setRequestStatus("sending");
+    setRequestError(null);
     try {
       await createDonationRequest({
         donorId: visibleSelectedDonor.id,
         bloodGroup: validBloodGroup,
       });
 
-      alert("Donation request sent successfully!");
+      if (!mounted.current) return;
+      const donorId = visibleSelectedDonor.id;
+      const donorName = visibleSelectedDonor.name;
+      setRequestedDonorIds((previous) => new Set(previous).add(donorId));
       setSelectedDonor(null);
-    } catch {
-      alert("Failed to send donation request.");
+      setRequestStatus("idle");
+      setSuccessMessage(`Request sent successfully to ${donorName}.`);
+    } catch (requestFailure) {
+      if (mounted.current) {
+        setRequestError(getRequestErrorMessage(requestFailure));
+        setRequestStatus("error");
+      }
+    } finally {
+      requestInFlight.current = false;
     }
   };
 
@@ -124,66 +170,75 @@ export default function Donors() {
     : "";
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-5 pt-16 pb-10"
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text className="text-3xl font-bold text-text">Available Donors</Text>
-
-      <Text className="mb-6 mt-2 text-base text-muted">
-        Donors with blood group {bloodGroupLabel}
-      </Text>
-      {isLoading && <Text className="text-muted">Searching for donors...</Text>}
-
-      {!isLoading && visibleError && (
-        <View className="items-center">
-          <Text className="mb-3 text-error">{visibleError}</Text>
-
-          <Pressable
-            className="rounded-xl bg-primary px-6 py-3"
-            onPress={() => setRetry((prev) => prev + 1)}
-          >
-            <Text className="font-bold text-white">Retry</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!isLoading && !visibleError && visibleDonors.length === 0 && (
-        <Text className="text-muted">
-          No donors found for blood group {bloodGroupLabel || "this selection"}.
+    <View className="flex-1 bg-background">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-5 pt-16 pb-10"
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text className="text-3xl font-bold text-text">Available Donors</Text>
+        <Text className="mb-6 mt-2 text-base text-muted">
+          Donors with blood group {bloodGroupLabel}
         </Text>
-      )}
-      {visibleDonors.map((donor) => (
-        <DonorCard
-          key={donor.id}
-          name={donor.name}
-          bloodGroup={donor.bloodGroup}
-          city={donor.city}
-          state={donor.state}
-          onRequest={() => setSelectedDonor(donor)}
-        />
-      ))}
-      {visibleSelectedDonor && (
-        <View className="mt-6 rounded-2xl border border-border p-5">
-          <Text className="mb-4 text-xl font-bold text-text">
-            Request Donation
-          </Text>
+        {isLoading && (
+          <Text className="text-muted">Searching for donors...</Text>
+        )}
 
-          <Text className="mb-2 text-sm text-muted">
-            Requesting blood from {visibleSelectedDonor.name}
-          </Text>
+        {!isLoading && visibleError && (
+          <View className="items-center">
+            <Text className="mb-3 text-error">{visibleError}</Text>
+            <Pressable
+              className="rounded-xl bg-primary px-6 py-3"
+              onPress={() => setRetry((prev) => prev + 1)}
+            >
+              <Text className="font-bold text-white">Retry</Text>
+            </Pressable>
+          </View>
+        )}
 
-          <Pressable
-            className="rounded-xl bg-primary p-4"
-            onPress={handleSendRequest}
-          >
-            <Text className="text-center font-bold text-white">
-              Send Request
-            </Text>
-          </Pressable>
-        </View>
-      )}
-    </ScrollView>
+        {!isLoading && !visibleError && visibleDonors.length === 0 && (
+          <Text className="text-muted">
+            No donors found for blood group{" "}
+            {bloodGroupLabel || "this selection"}.
+          </Text>
+        )}
+        {visibleDonors.map((donor) => (
+          <DonorCard
+            key={donor.id}
+            name={donor.name}
+            bloodGroup={donor.bloodGroup}
+            city={donor.city}
+            state={donor.state}
+            requested={requestedDonorIds.has(donor.id)}
+            disabled={requestStatus === "sending"}
+            onRequest={() => {
+              if (requestedDonorIds.has(donor.id) || requestInFlight.current)
+                return;
+              setSelectedDonor(donor);
+              setRequestStatus("idle");
+              setRequestError(null);
+            }}
+          />
+        ))}
+      </ScrollView>
+
+      <DonationRequestSheet
+        donor={visibleSelectedDonor}
+        visible={visibleSelectedDonor !== null}
+        sending={requestStatus === "sending"}
+        error={requestError}
+        onClose={() => {
+          if (requestInFlight.current) return;
+          setSelectedDonor(null);
+          setRequestStatus("idle");
+          setRequestError(null);
+        }}
+        onConfirm={handleSendRequest}
+      />
+      <Toast
+        message={successMessage}
+        onDismiss={() => setSuccessMessage(null)}
+      />
+    </View>
   );
 }
