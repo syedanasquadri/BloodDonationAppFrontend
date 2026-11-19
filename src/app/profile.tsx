@@ -354,6 +354,12 @@ export default function ProfileScreen() {
                 >
                   <Text className="font-bold text-primary">My Requests</Text>
                 </Pressable>
+                <Pressable
+                  className="mb-3 items-center rounded-xl border border-border bg-white py-4"
+                  onPress={() => router.push("/notification-preferences")}
+                >
+                  <Text className="font-bold text-gray-700">Notification Preferences</Text>
+                </Pressable>
               </>
             )}
 

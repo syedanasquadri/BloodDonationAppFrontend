@@ -2,6 +2,7 @@ import "../global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -42,7 +43,9 @@ function RootNavigator() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <NotificationProvider>
+        <RootNavigator />
+      </NotificationProvider>
     </AuthProvider>
   );
 }

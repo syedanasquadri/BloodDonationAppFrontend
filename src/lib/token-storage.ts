@@ -1,5 +1,57 @@
+import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { persistRotatedTokenPair } from "@/context/session-coordinator";
+
+const isWeb = Platform.OS === "web";
+const memoryStore = new Map<string, string>();
+
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (isWeb) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage.getItem(key);
+        }
+      } catch {
+        // Fallback to in-memory store if localStorage is blocked
+      }
+      return memoryStore.get(key) ?? null;
+    }
+    return SecureStore.getItemAsync(key);
+  },
+
+  async setItem(key: string, value: string): Promise<void> {
+    if (isWeb) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(key, value);
+          return;
+        }
+      } catch {
+        // Fallback to in-memory store if localStorage is blocked
+      }
+      memoryStore.set(key, value);
+      return;
+    }
+    return SecureStore.setItemAsync(key, value);
+  },
+
+  async deleteItem(key: string): Promise<void> {
+    if (isWeb) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.removeItem(key);
+          return;
+        }
+      } catch {
+        // Fallback to in-memory store if localStorage is blocked
+      }
+      memoryStore.delete(key);
+      return;
+    }
+    return SecureStore.deleteItemAsync(key);
+  },
+};
 
 export const saveAuthTokens = async (
   accessToken: string,
@@ -10,17 +62,17 @@ export const saveAuthTokens = async (
   }
 
   const [previousAccessToken, previousRefreshToken] = await Promise.all([
-    SecureStore.getItemAsync("accessToken"),
-    SecureStore.getItemAsync("refreshToken"),
+    storage.getItem("accessToken"),
+    storage.getItem("refreshToken"),
   ]);
 
   try {
-    await SecureStore.setItemAsync("accessToken", accessToken);
-    await SecureStore.setItemAsync("refreshToken", refreshToken);
+    await storage.setItem("accessToken", accessToken);
+    await storage.setItem("refreshToken", refreshToken);
 
     const [storedAccessToken, storedRefreshToken] = await Promise.all([
-      SecureStore.getItemAsync("accessToken"),
-      SecureStore.getItemAsync("refreshToken"),
+      storage.getItem("accessToken"),
+      storage.getItem("refreshToken"),
     ]);
 
     if (
@@ -32,49 +84,49 @@ export const saveAuthTokens = async (
   } catch (error) {
     await Promise.all([
       previousAccessToken
-        ? SecureStore.setItemAsync("accessToken", previousAccessToken)
-        : SecureStore.deleteItemAsync("accessToken"),
+        ? storage.setItem("accessToken", previousAccessToken)
+        : storage.deleteItem("accessToken"),
       previousRefreshToken
-        ? SecureStore.setItemAsync("refreshToken", previousRefreshToken)
-        : SecureStore.deleteItemAsync("refreshToken"),
+        ? storage.setItem("refreshToken", previousRefreshToken)
+        : storage.deleteItem("refreshToken"),
     ]);
     throw error;
   }
 };
 
 export const saveSignupToken = async (signupToken: string) => {
-  await SecureStore.setItemAsync("signupToken", signupToken);
+  await storage.setItem("signupToken", signupToken);
 };
 
 export const getAccessToken = async () => {
-  return SecureStore.getItemAsync("accessToken");
+  return storage.getItem("accessToken");
 };
 
 export const getRefreshToken = async () => {
-  return SecureStore.getItemAsync("refreshToken");
+  return storage.getItem("refreshToken");
 };
 
 export const getSignupToken = async () => {
-  return SecureStore.getItemAsync("signupToken");
+  return storage.getItem("signupToken");
 };
 
 export const clearTokens = async () => {
   await Promise.all([
-    SecureStore.deleteItemAsync("accessToken"),
-    SecureStore.deleteItemAsync("refreshToken"),
-    SecureStore.deleteItemAsync("signupToken"),
+    storage.deleteItem("accessToken"),
+    storage.deleteItem("refreshToken"),
+    storage.deleteItem("signupToken"),
   ]);
 };
 
 export const clearAuthTokens = async () => {
   await Promise.all([
-    SecureStore.deleteItemAsync("accessToken"),
-    SecureStore.deleteItemAsync("refreshToken"),
+    storage.deleteItem("accessToken"),
+    storage.deleteItem("refreshToken"),
   ]);
 };
 
 export const clearSignupToken = async () => {
-  await SecureStore.deleteItemAsync("signupToken");
+  await storage.deleteItem("signupToken");
 };
 
 export const saveRotatedAuthTokens = async (
@@ -83,10 +135,8 @@ export const saveRotatedAuthTokens = async (
 ) => {
   await persistRotatedTokenPair(
     {
-      setAccessToken: (token) =>
-        SecureStore.setItemAsync("accessToken", token),
-      setRefreshToken: (token) =>
-        SecureStore.setItemAsync("refreshToken", token),
+      setAccessToken: (token) => storage.setItem("accessToken", token),
+      setRefreshToken: (token) => storage.setItem("refreshToken", token),
       getAccessToken,
       getRefreshToken,
       clearAuthTokens,
