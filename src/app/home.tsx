@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { getCurrentUserProfile } from "@/api/users";
 import type { UserProfile } from "@/api/users";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type ActionCardProps = {
   icon: string;
@@ -76,16 +77,19 @@ export default function HomeScreen() {
               Digital Unity for All
             </Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open My Profile"
-            onPress={() => router.push("/profile")}
-            className="h-12 w-12 items-center justify-center rounded-full border border-red-100 bg-white"
-          >
-            <Text className="text-base font-bold text-primary">
-              {getInitials(profile?.name)}
-            </Text>
-          </Pressable>
+          <View className="flex-row items-center gap-3">
+            <NotificationBell />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open My Profile"
+              onPress={() => router.push("/profile")}
+              className="h-12 w-12 items-center justify-center rounded-full border border-red-100 bg-white"
+            >
+              <Text className="text-base font-bold text-primary">
+                {getInitials(profile?.name)}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View className="mb-6">
