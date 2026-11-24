@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
   ReactNode,
 } from "react";
 import {
@@ -11,12 +12,15 @@ import {
   getRefreshToken,
 } from "@/lib/token-storage";
 import { logoutSession } from "@/api/auth";
+import { getCurrentUserProfile, type UserProfile } from "@/api/users";
 import { subscribeToAuthInvalidation } from "./auth-events";
 import { sessionCoordinator } from "./session-coordinator";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  user: UserProfile | null;
+  refreshUser: () => Promise<void>;
   login: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -26,10 +30,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const profile = await getCurrentUserProfile();
+      setUser(profile);
+    } catch {
+      // User profile can fail silently if network is unavailable
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProfile();
+    } else {
+      setUser(null);
+    }
+  }, [isAuthenticated, fetchProfile]);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthInvalidation(() => {
       setIsAuthenticated(false);
+      setUser(null);
     });
 
     const restoreSession = async () => {
@@ -98,7 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        refreshUser: fetchProfile,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

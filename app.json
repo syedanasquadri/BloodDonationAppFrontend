@@ -43,6 +43,12 @@
           "icon": "./assets/images/icon.png",
           "color": "#B42335"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Show your approximate location to find nearby blood donors."
+        }
       ]
     ],
     "experiments": {

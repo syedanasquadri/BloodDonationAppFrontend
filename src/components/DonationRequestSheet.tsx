@@ -32,6 +32,13 @@ export default function DonationRequestSheet({
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
     .join(", ");
+  const distanceText =
+    donor?.distanceKm !== undefined && donor?.distanceKm !== null
+      ? donor.distanceKm === 0 || donor.distanceKm < 0.1
+        ? "< 1 km away"
+        : `${donor.distanceKm} km away`
+      : null;
+  const locationDetails = [location, distanceText].filter(Boolean).join(" · ");
   const dismiss = () => {
     if (!sending) onClose();
   };
@@ -85,8 +92,8 @@ export default function DonationRequestSheet({
                   <Text className="mt-1 text-lg font-bold text-text">
                     {donor.name}
                   </Text>
-                  {location ? (
-                    <Text className="mt-1 text-sm text-muted">{location}</Text>
+                  {locationDetails ? (
+                    <Text className="mt-1 text-sm text-muted">{locationDetails}</Text>
                   ) : null}
                 </View>
                 <View className="rounded-full bg-red-50 px-4 py-2">

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -21,6 +21,7 @@ import type {
 import { BLOOD_GROUPS, getBloodGroupLabel } from "@/constants/bloodGroups";
 import type { BloodGroup } from "@/constants/bloodGroups";
 import { useAuth } from "@/context/AuthContext";
+import { getCurrentLocationWithAddress } from "@/lib/location";
 
 const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
@@ -88,7 +89,7 @@ function EditField({ label, value, onChangeText, editable = true }: EditFieldPro
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, refreshUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -97,7 +98,28 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [draft, setDraft] = useState<UpdateUserProfileInput>({});
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
+
+  const setTimedLocationStatus = (message: string, durationMs = 3500) => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+    setLocationStatus(message);
+    statusTimerRef.current = setTimeout(() => {
+      setLocationStatus(null);
+    }, durationMs);
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -126,20 +148,58 @@ export default function ProfileScreen() {
 
   const beginEditing = () => {
     if (!profile) return;
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
     setDraft({
       name: profile.name,
       bloodGroup: profile.bloodGroup,
       address: profile.address,
       city: profile.city,
       state: profile.state,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
     });
     setSaveError(null);
+    setLocationStatus(null);
     setEditing(true);
   };
 
   const cancelEditing = () => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
     setEditing(false);
     setSaveError(null);
+    setLocationStatus(null);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      setLocationLoading(true);
+      setLocationStatus(null);
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+      const loc = await getCurrentLocationWithAddress();
+      if (!loc) {
+        setTimedLocationStatus("Location permission denied or unavailable.", 4000);
+        return;
+      }
+      setDraft((current) => ({
+        ...current,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        address: loc.address ? loc.address : current.address,
+        city: loc.city ? loc.city : current.city,
+        state: loc.state ? loc.state : current.state,
+      }));
+      setTimedLocationStatus("Location captured successfully.");
+    } catch {
+      setTimedLocationStatus("Unable to determine location.", 4000);
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const saveProfile = async () => {
@@ -162,8 +222,11 @@ export default function ProfileScreen() {
         address: draft.address?.trim() || null,
         city: draft.city?.trim() || null,
         state: draft.state?.trim() || null,
+        latitude: draft.latitude !== undefined ? draft.latitude : profile.latitude,
+        longitude: draft.longitude !== undefined ? draft.longitude : profile.longitude,
       });
       setProfile((current) => (current ? { ...current, ...updated } : current));
+      void refreshUser();
       setEditing(false);
     } catch (error) {
       setSaveError(getSaveErrorMessage(error));
@@ -279,6 +342,35 @@ export default function ProfileScreen() {
                     </Pressable>
                   ))}
                 </View>
+                <View className="mb-3 flex-row items-center justify-between">
+                  <Text className="text-sm font-semibold text-text">
+                    Location
+                  </Text>
+                  <Pressable
+                    onPress={handleUseCurrentLocation}
+                    disabled={locationLoading || saving}
+                    className="flex-row items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 active:opacity-70"
+                  >
+                    {locationLoading ? (
+                      <ActivityIndicator size="small" color="#B42335" />
+                    ) : (
+                      <Text className="text-xs font-bold text-primary">
+                        📍 Use Current Location
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+                {locationStatus ? (
+                  <Text
+                    className={`mb-3 text-xs ${
+                      draft.latitude !== undefined && draft.latitude !== null
+                        ? "text-green-700"
+                        : "text-muted"
+                    }`}
+                  >
+                    {locationStatus}
+                  </Text>
+                ) : null}
                 <EditField
                   label="Address"
                   value={draft.address ?? ""}

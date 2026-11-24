@@ -6,8 +6,11 @@ export type DonorSearchResult = {
   bloodGroup: BloodGroup;
   city: string | null;
   state: string | null;
+  distanceKm?: number | null;
 };
 
 export type DonorFilters = {
   bloodGroup?: BloodGroup;
+  lat?: number;
+  lng?: number;
 };

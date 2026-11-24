@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/token-storage";
 import { useAuth } from "@/context/AuthContext";
 import { BLOOD_GROUPS } from "@/constants/bloodGroups";
+import { getCurrentLocationWithAddress } from "@/lib/location";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
@@ -25,9 +26,63 @@ export default function CompleteProfileScreen() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
+
+  const setTimedLocationStatus = (message: string, durationMs = 3500) => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+    setLocationStatus(message);
+    statusTimerRef.current = setTimeout(() => {
+      setLocationStatus(null);
+    }, durationMs);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      setLocationLoading(true);
+      setLocationStatus(null);
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+      const loc = await getCurrentLocationWithAddress();
+      if (!loc) {
+        setTimedLocationStatus("Location permission denied or unavailable.", 4000);
+        return;
+      }
+      setLatitude(loc.latitude);
+      setLongitude(loc.longitude);
+      if (loc.address) {
+        setAddress(loc.address);
+      }
+      if (loc.city) {
+        setCity(loc.city);
+      }
+      if (loc.state) {
+        setState(loc.state);
+      }
+      setTimedLocationStatus("Location captured successfully.");
+    } catch {
+      setTimedLocationStatus("Unable to determine location.", 4000);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -57,6 +112,8 @@ export default function CompleteProfileScreen() {
         address: address.trim() || undefined,
         city: city.trim() || undefined,
         state: state.trim() || undefined,
+        latitude,
+        longitude,
       });
 
       await saveAuthTokens(result.accessToken, result.refreshToken);
@@ -126,9 +183,33 @@ export default function CompleteProfileScreen() {
         ))}
       </View>
 
-      <Text className="mb-2 mt-6 font-semibold text-gray-800">
-        Address (Optional)
-      </Text>
+      <View className="mb-2 mt-6 flex-row items-center justify-between">
+        <Text className="font-semibold text-gray-800">
+          Address (Optional)
+        </Text>
+        <TouchableOpacity
+          onPress={handleUseCurrentLocation}
+          disabled={locationLoading || loading}
+          className="flex-row items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 active:opacity-70"
+        >
+          {locationLoading ? (
+            <ActivityIndicator size="small" color="#B42335" />
+          ) : (
+            <Text className="text-xs font-bold text-[#B42335]">
+              📍 Use Current Location
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      {locationStatus ? (
+        <Text
+          className={`mb-2 text-xs ${
+            latitude !== undefined ? "text-green-700" : "text-gray-500"
+          }`}
+        >
+          {locationStatus}
+        </Text>
+      ) : null}
 
       <TextInput
         className="rounded-xl border border-gray-300 bg-white px-4 py-4 text-gray-900"

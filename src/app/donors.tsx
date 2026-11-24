@@ -10,6 +10,8 @@ import type { DonorSearchResult } from "@/types/donorTypes";
 import { createDonationRequest } from "@/api/donationRequests";
 import { BLOOD_GROUPS, getBloodGroupLabel } from "@/constants/bloodGroups";
 import type { BloodGroup } from "@/constants/bloodGroups";
+import { useAuth } from "@/context/AuthContext";
+import { getCurrentLocationWithAddress } from "@/lib/location";
 
 const isBloodGroup = (value: string | undefined): value is BloodGroup =>
   BLOOD_GROUPS.some((group) => group.value === value);
@@ -43,6 +45,12 @@ export default function Donors() {
     : bloodGroupParam;
   const validBloodGroup = isBloodGroup(bloodGroup) ? bloodGroup : undefined;
 
+  const { user } = useAuth();
+  const [userCoords, setUserCoords] = useState<{
+    lat?: number;
+    lng?: number;
+  } | null>(null);
+
   const [donors, setDonors] = useState<DonorSearchResult[]>([]);
   const [resultsBloodGroup, setResultsBloodGroup] = useState<BloodGroup>();
   const [selectedDonor, setSelectedDonor] = useState<DonorSearchResult | null>(
@@ -72,7 +80,40 @@ export default function Donors() {
     };
   }, []);
 
+  // Silently resolve user GPS coordinates on mount (falling back to AuthContext saved coordinates)
   useEffect(() => {
+    let active = true;
+
+    const resolveCoordinates = async () => {
+      try {
+        const loc = await getCurrentLocationWithAddress();
+        if (!active) return;
+        if (loc) {
+          setUserCoords({ lat: loc.latitude, lng: loc.longitude });
+          return;
+        }
+      } catch {
+        // Fall back gracefully
+      }
+
+      if (!active) return;
+      if (user?.latitude != null && user?.longitude != null) {
+        setUserCoords({ lat: user.latitude, lng: user.longitude });
+      } else {
+        setUserCoords({});
+      }
+    };
+
+    void resolveCoordinates();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (userCoords === null) return;
+
     const controller = new AbortController();
     let active = true;
 
@@ -96,7 +137,11 @@ export default function Donors() {
       setLoading(true);
       try {
         const data = await getDonors(
-          { bloodGroup: validBloodGroup },
+          {
+            bloodGroup: validBloodGroup,
+            lat: userCoords.lat,
+            lng: userCoords.lng,
+          },
           controller.signal,
         );
 
@@ -120,7 +165,7 @@ export default function Donors() {
       active = false;
       controller.abort();
     };
-  }, [validBloodGroup, retry]);
+  }, [validBloodGroup, retry, userCoords]);
 
   const visibleDonors =
     validBloodGroup && resultsBloodGroup === validBloodGroup ? donors : [];
@@ -209,6 +254,7 @@ export default function Donors() {
             bloodGroup={donor.bloodGroup}
             city={donor.city}
             state={donor.state}
+            distanceKm={donor.distanceKm}
             requested={requestedDonorIds.has(donor.id)}
             disabled={requestStatus === "sending"}
             onRequest={() => {
