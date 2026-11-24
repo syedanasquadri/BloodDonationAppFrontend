@@ -10,6 +10,8 @@ export type UserProfile = {
   address: string | null;
   city: string | null;
   state: string | null;
+  latitude: number | null;
+  longitude: number | null;
   isPhoneVerified: boolean;
   createdAt: string;
   updatedAt: string;
@@ -21,11 +23,22 @@ export type UpdateUserProfileInput = {
   address?: string | null;
   city?: string | null;
   state?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type UpdateUserProfileResponse = Pick<
   UserProfile,
-  "id" | "name" | "bloodGroup" | "city" | "state" | "createdAt" | "updatedAt"
+  | "id"
+  | "name"
+  | "bloodGroup"
+  | "address"
+  | "city"
+  | "state"
+  | "latitude"
+  | "longitude"
+  | "createdAt"
+  | "updatedAt"
 >;
 
 const getAuthenticatedUserId = async (): Promise<number> => {
