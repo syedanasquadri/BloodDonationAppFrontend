@@ -7,6 +7,15 @@ export type DonationRequestStatus =
   | "REJECTED"
   | "CANCELLED";
 
+export type CounterpartyUser = {
+  id: number;
+  name: string;
+  bloodGroup: BloodGroup;
+  city: string | null;
+  state: string | null;
+  phone?: string | null;
+};
+
 export type ReceivedDonationRequest = {
   id: number;
   requesterId: number;
@@ -15,9 +24,21 @@ export type ReceivedDonationRequest = {
   status: DonationRequestStatus;
   createdAt: string;
   updatedAt: string;
+  requester?: CounterpartyUser | null;
 };
 
-export type DonationRequestRecord = ReceivedDonationRequest;
+export type SentDonationRequest = {
+  id: number;
+  requesterId: number;
+  donorId: number;
+  bloodGroup: BloodGroup;
+  status: DonationRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+  donor?: CounterpartyUser | null;
+};
+
+export type DonationRequestRecord = SentDonationRequest;
 
 export type DonationRequestDecision = "ACCEPTED" | "REJECTED";
 

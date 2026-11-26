@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import {
+  Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -41,6 +43,43 @@ const formatDate = (value: string): string => {
   return Number.isNaN(date.getTime())
     ? ""
     : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+};
+
+const handleCall = async (phone: string) => {
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  if (!cleaned) {
+    Alert.alert("Invalid Phone Number", "No valid phone number found to call.");
+    return;
+  }
+  const url = `tel:${cleaned}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(
+      "Unable to make a call",
+      `Could not open the phone dialer. Please dial ${phone} directly.`,
+    );
+  }
+};
+
+const handleWhatsApp = async (phone: string) => {
+  let digitsOnly = phone.replace(/\D/g, "");
+  if (digitsOnly.length === 10) {
+    digitsOnly = `91${digitsOnly}`;
+  }
+  if (!digitsOnly) {
+    Alert.alert("Invalid Phone Number", "No valid phone number found for WhatsApp.");
+    return;
+  }
+  const url = `https://wa.me/${digitsOnly}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Could not open WhatsApp. Please ensure WhatsApp is installed on your device.",
+    );
+  }
 };
 
 export default function MyRequestsScreen() {
@@ -150,6 +189,13 @@ export default function MyRequestsScreen() {
       {requests.map((request) => {
         const statusStyle = getStatusStyle(request.status);
         const createdAt = formatDate(request.createdAt);
+        const donorName = request.donor?.name ?? `Donor #${request.donorId}`;
+        const location = [request.donor?.city, request.donor?.state]
+          .map((part) => part?.trim())
+          .filter((part): part is string => Boolean(part))
+          .join(", ");
+        const isAccepted = request.status === "ACCEPTED";
+        const phone = isAccepted ? request.donor?.phone : null;
 
         return (
           <View
@@ -159,10 +205,10 @@ export default function MyRequestsScreen() {
             <View className="mb-4 flex-row items-start justify-between">
               <View className="mr-3 flex-1">
                 <Text className="text-lg font-bold text-text">
-                  Request #{request.id}
+                  {donorName}
                 </Text>
                 <Text className="mt-1 text-sm text-muted">
-                  Donor ID: {request.donorId}
+                  {location ? location : `Request #${request.id}`}
                 </Text>
               </View>
               <View className={`rounded-full px-3 py-1.5 ${statusStyle.badge}`}>
@@ -172,7 +218,7 @@ export default function MyRequestsScreen() {
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
+            <View className="flex-row items-center justify-between rounded-xl bg-background px-4 py-3">
               <View>
                 <Text className="text-sm text-muted">Requested blood group</Text>
                 <Text className="mt-1 text-xl font-bold text-primary">
@@ -188,6 +234,35 @@ export default function MyRequestsScreen() {
                 </View>
               ) : null}
             </View>
+
+            {isAccepted && phone ? (
+              <View className="mt-4 rounded-xl border border-green-200 bg-green-50/70 p-3.5">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-green-800">
+                  Donor Contact Details
+                </Text>
+                <Text className="mt-1 text-base font-bold text-text">
+                  {phone}
+                </Text>
+                <View className="mt-3 flex-row gap-2.5">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call ${donorName}`}
+                    className="flex-1 flex-row items-center justify-center rounded-xl bg-primary py-2.5 active:opacity-80"
+                    onPress={() => void handleCall(phone)}
+                  >
+                    <Text className="font-bold text-white">📞 Call</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`WhatsApp ${donorName}`}
+                    className="flex-1 flex-row items-center justify-center rounded-xl bg-[#25D366] py-2.5 active:opacity-80"
+                    onPress={() => void handleWhatsApp(phone)}
+                  >
+                    <Text className="font-bold text-white">💬 WhatsApp</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
           </View>
         );
       })}
