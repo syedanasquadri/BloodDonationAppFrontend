@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -63,6 +65,43 @@ const formatDate = (value: string): string => {
     dateStyle: "medium",
     timeStyle: "short",
   });
+};
+
+const handleCall = async (phone: string) => {
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  if (!cleaned) {
+    Alert.alert("Invalid Phone Number", "No valid phone number found to call.");
+    return;
+  }
+  const url = `tel:${cleaned}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(
+      "Unable to make a call",
+      `Could not open the phone dialer. Please dial ${phone} directly.`,
+    );
+  }
+};
+
+const handleWhatsApp = async (phone: string) => {
+  let digitsOnly = phone.replace(/\D/g, "");
+  if (digitsOnly.length === 10) {
+    digitsOnly = `91${digitsOnly}`;
+  }
+  if (!digitsOnly) {
+    Alert.alert("Invalid Phone Number", "No valid phone number found for WhatsApp.");
+    return;
+  }
+  const url = `https://wa.me/${digitsOnly}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(
+      "Unable to open WhatsApp",
+      "Could not open WhatsApp. Please ensure WhatsApp is installed on your device.",
+    );
+  }
 };
 
 export default function ReceivedRequestsScreen() {
@@ -228,6 +267,14 @@ export default function ReceivedRequestsScreen() {
         const feedback = actionFeedback[request.id];
         const createdAt = formatDate(request.createdAt);
         const statusStyle = getStatusStyle(request.status);
+        const requesterName =
+          request.requester?.name ?? `Requester #${request.requesterId}`;
+        const location = [request.requester?.city, request.requester?.state]
+          .map((part) => part?.trim())
+          .filter((part): part is string => Boolean(part))
+          .join(", ");
+        const isAccepted = request.status === "ACCEPTED";
+        const phone = isAccepted ? request.requester?.phone : null;
 
         return (
           <View
@@ -237,10 +284,10 @@ export default function ReceivedRequestsScreen() {
             <View className="mb-4 flex-row items-start justify-between">
               <View className="mr-3 flex-1">
                 <Text className="text-lg font-bold text-text">
-                  Request #{request.id}
+                  {requesterName}
                 </Text>
                 <Text className="mt-1 text-sm text-muted">
-                  Requester ID: {request.requesterId}
+                  {location ? location : `Request #${request.id}`}
                 </Text>
               </View>
               <View className={`rounded-full px-3 py-1.5 ${statusStyle.badge}`}>
@@ -266,6 +313,35 @@ export default function ReceivedRequestsScreen() {
                 </View>
               ) : null}
             </View>
+
+            {isAccepted && phone ? (
+              <View className="mb-4 rounded-xl border border-green-200 bg-green-50/70 p-3.5">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-green-800">
+                  Requester Contact Details
+                </Text>
+                <Text className="mt-1 text-base font-bold text-text">
+                  {phone}
+                </Text>
+                <View className="mt-3 flex-row gap-2.5">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call ${requesterName}`}
+                    className="flex-1 flex-row items-center justify-center rounded-xl bg-primary py-2.5 active:opacity-80"
+                    onPress={() => void handleCall(phone)}
+                  >
+                    <Text className="font-bold text-white">📞 Call</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`WhatsApp ${requesterName}`}
+                    className="flex-1 flex-row items-center justify-center rounded-xl bg-[#25D366] py-2.5 active:opacity-80"
+                    onPress={() => void handleWhatsApp(phone)}
+                  >
+                    <Text className="font-bold text-white">💬 WhatsApp</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
 
             {feedback && (
               <View
