@@ -8,7 +8,11 @@ import DonationRequestSheet from "@/components/DonationRequestSheet";
 import Toast from "@/components/Toast";
 import type { DonorSearchResult } from "@/types/donorTypes";
 import { createDonationRequest } from "@/api/donationRequests";
-import { BLOOD_GROUPS, getBloodGroupLabel } from "@/constants/bloodGroups";
+import {
+  BLOOD_GROUPS,
+  getBloodGroupLabel,
+  getCompatibleBloodGroupLabels,
+} from "@/constants/bloodGroups";
 import type { BloodGroup } from "@/constants/bloodGroups";
 import { useAuth } from "@/context/AuthContext";
 import { getCurrentLocationWithAddress } from "@/lib/location";
@@ -177,7 +181,9 @@ export default function Donors() {
       resultsBloodGroup !== validBloodGroup &&
       visibleError === null);
   const visibleSelectedDonor =
-    selectedDonor?.bloodGroup === validBloodGroup ? selectedDonor : null;
+    validBloodGroup && resultsBloodGroup === validBloodGroup
+      ? selectedDonor
+      : null;
 
   const handleSendRequest = async () => {
     if (!visibleSelectedDonor || !validBloodGroup || requestInFlight.current)
@@ -213,6 +219,9 @@ export default function Donors() {
   const bloodGroupLabel = validBloodGroup
     ? getBloodGroupLabel(validBloodGroup)
     : "";
+  const compatibleGroupLabels = validBloodGroup
+    ? getCompatibleBloodGroupLabels(validBloodGroup)
+    : [];
 
   return (
     <View className="flex-1 bg-background">
@@ -223,7 +232,7 @@ export default function Donors() {
       >
         <Text className="text-3xl font-bold text-text">Available Donors</Text>
         <Text className="mb-6 mt-2 text-base text-muted">
-          Donors with blood group {bloodGroupLabel}
+          Compatible donors for {bloodGroupLabel}
         </Text>
         {isLoading && (
           <Text className="text-muted">Searching for donors...</Text>
@@ -243,8 +252,9 @@ export default function Donors() {
 
         {!isLoading && !visibleError && visibleDonors.length === 0 && (
           <Text className="text-muted">
-            No donors found for blood group{" "}
-            {bloodGroupLabel || "this selection"}.
+            {compatibleGroupLabels.length > 0
+              ? `No compatible donors (${compatibleGroupLabels.join(", ")}) are currently available.`
+              : "No compatible donors are currently available."}
           </Text>
         )}
         {visibleDonors.map((donor) => (
@@ -255,6 +265,7 @@ export default function Donors() {
             city={donor.city}
             state={donor.state}
             distanceKm={donor.distanceKm}
+            matchType={donor.matchType}
             requested={requestedDonorIds.has(donor.id)}
             disabled={requestStatus === "sending"}
             onRequest={() => {

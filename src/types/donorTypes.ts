@@ -1,5 +1,7 @@
 import type { BloodGroup } from "@/constants/bloodGroups";
 
+export type MatchType = "EXACT" | "COMPATIBLE";
+
 export type DonorSearchResult = {
   id: number;
   name: string;
@@ -7,6 +9,7 @@ export type DonorSearchResult = {
   city: string | null;
   state: string | null;
   distanceKm?: number | null;
+  matchType?: MatchType;
 };
 
 export type DonorFilters = {
