@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { sendOtp } from "@/api/auth";
+import { API_URL } from "@/api/config";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -42,6 +43,13 @@ export default function LoginScreen() {
         params: { phone: fullPhone },
       });
     } catch (error: any) {
+      console.error("Send OTP failed:", {
+        apiUrl: API_URL,
+        message: error?.message,
+        code: error?.code,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
       setError(
         error.response?.data?.message ||
           "Unable to send OTP. Please try again."
